@@ -28,9 +28,11 @@
   "dependencies": {},
   "peerDependencies": {},
   "devDependencies": {
+    "rimraf": "^2.6.2",
     "typescript": "^2.7.2"
   },
   "scripts": {
-    "build": "tsc"
+    "build": "tsc",
+    "clean": "rimraf dist"
   }
 }

@@ -1,0 +1,32 @@
+{
+  "name": "ravendb-express-session",
+  "description": "RavenDB session store for Express.js",
+  "keywords": [
+    "ravendb",
+    "express",
+    "session",
+    "store",
+    "typescript"
+  ],
+  "version": "0.0.0",
+  "license": "MIT",
+  "homepage": "https://github.com/tkryskiewicz/ravendb-express-session",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tkryskiewicz/ravendb-express-session.git"
+  },
+  "bugs": "https://github.com/tkryskiewicz/ravendb-express-session/issues",
+  "author": {
+    "name": "Tomasz Kryśkiewicz",
+    "email": "contact@tkryskiewicz.com",
+    "url": "http://tkryskiewicz.com/"
+  },
+  "contributors": [],
+  "engines": {
+    "node": "*"
+  },
+  "dependencies": {},
+  "peerDependencies": {},
+  "devDependencies": {},
+  "scripts": {}
+}

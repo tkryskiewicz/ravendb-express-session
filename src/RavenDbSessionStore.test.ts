@@ -70,7 +70,7 @@ describe("RavenDbSessionStore", () => {
 
           done();
         })();
-      })
+      });
     });
 
     it("should store session data", (done) => {
@@ -79,8 +79,8 @@ describe("RavenDbSessionStore", () => {
       const sessionId = generateSessionId();
 
       const session: Express.Session = {
-        id: sessionId,
         data: "data",
+        id: sessionId,
       } as any;
 
       instance.set(sessionId, session, () => {

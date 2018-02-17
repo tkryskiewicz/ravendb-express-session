@@ -26,6 +26,16 @@ export class RavenDbSessionStore extends Store {
       });
   }
 
+  public destroy = (sid: string, callback: (err: any) => void) => {
+    this.destroySession(sid)
+      .then(() => {
+        callback(undefined);
+      })
+      .catch((error) => {
+        callback(error);
+      });
+  }
+
   private async setSession(sessionId: string, session: Express.Session) {
     const documentSession = this.documentStore.openSession();
 
@@ -51,5 +61,13 @@ export class RavenDbSessionStore extends Store {
       "@meta": undefined,
       "cookie": sessionDocument.cookie,
     } : undefined;
+  }
+
+  private async destroySession(sessionId: string) {
+    const documentSession = this.documentStore.openSession();
+
+    await documentSession.delete(sessionId, { documentType: "Session" });
+
+    await documentSession.saveChanges();
   }
 }

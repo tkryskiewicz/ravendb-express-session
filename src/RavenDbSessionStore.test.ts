@@ -141,4 +141,36 @@ describe("RavenDbSessionStore", () => {
       });
     });
   });
+
+  describe("destroy", () => {
+    it("should delete session", (done) => {
+      const instance = new RavenDbSessionStore(documentStore);
+
+      const sessionId = generateSessionId();
+
+      const session = getSession(sessionId);
+
+      instance.set(sessionId, session, () => {
+        instance.destroy(sessionId, () => {
+          (async () => {
+            const sessionDocument = await loadSessionDocument(sessionId);
+
+            expect(sessionDocument).toBeNull();
+
+            done();
+          })();
+        });
+      });
+    });
+
+    it("should not fail when session doesn't exist", (done) => {
+      const instance = new RavenDbSessionStore(documentStore);
+
+      const sessionId = generateSessionId();
+
+      instance.destroy(sessionId, () => {
+        done();
+      });
+    });
+  });
 });

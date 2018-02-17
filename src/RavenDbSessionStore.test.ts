@@ -12,6 +12,23 @@ describe("RavenDbSessionStore", () => {
   });
 
   const generateSessionId = () => Math.random().toString().substr(2, 9);
+  const getSessionCookie = (): Express.SessionCookie => ({
+    expires: false,
+    httpOnly: false,
+    maxAge: 0,
+    originalMaxAge: 0,
+    path: "",
+    serialize: () => "",
+  });
+  const getSession = (sessionId: string): Express.Session => ({
+    cookie: getSessionCookie(),
+    destroy: () => undefined,
+    id: sessionId,
+    regenerate: () => undefined,
+    reload: () => undefined,
+    save: () => undefined,
+    touch: () => undefined,
+  });
 
   const loadSessionDocument = async (id: string) => {
     const documentSession = documentStore.openSession();
@@ -91,6 +108,36 @@ describe("RavenDbSessionStore", () => {
 
           done();
         })();
+      });
+    });
+  });
+
+  describe("get", () => {
+    it("should return stored session", (done) => {
+      const instance = new RavenDbSessionStore(documentStore);
+
+      const sessionId = generateSessionId();
+
+      const session = getSession(sessionId);
+
+      instance.set(sessionId, session, () => {
+        instance.get(sessionId, (_err, sessionData) => {
+          expect(sessionData).toBeDefined();
+
+          done();
+        });
+      });
+    });
+
+    it("should return undefined when session doesn't exist", (done) => {
+      const instance = new RavenDbSessionStore(documentStore);
+
+      const sessionId = generateSessionId();
+
+      instance.get(sessionId, (_err, session) => {
+        expect(session).toBeUndefined();
+
+        done();
       });
     });
   });

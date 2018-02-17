@@ -9,6 +9,7 @@
     ],
     "module": "commonjs",
     "moduleResolution": "node",
+    "skipLibCheck": true, // ravendb types issue
     "forceConsistentCasingInFileNames": true,
     "strict": true,
     "noUnusedLocals": true,

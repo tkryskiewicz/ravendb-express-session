@@ -1,9 +1,9 @@
 import { DocumentStore } from "ravendb";
 import * as Uuid from "uuid/v1";
 
-import { RavenDbSessionStore } from "./RavenDbSessionStore";
+import { RavenDbStore } from "./RavenDbStore";
 
-describe("RavenDbSessionStore", () => {
+describe("RavenDbStore", () => {
   let documentStore: DocumentStore;
 
   beforeAll(() => {
@@ -43,14 +43,14 @@ describe("RavenDbSessionStore", () => {
   };
 
   it("should be constructable", () => {
-    const instance = new RavenDbSessionStore(documentStore);
+    const instance = new RavenDbStore(documentStore);
 
     expect(instance).toBeDefined();
   });
 
   describe("set", () => {
     it("should store session document", (done) => {
-      const instance = new RavenDbSessionStore(documentStore);
+      const instance = new RavenDbStore(documentStore);
 
       const sessionId = generateSessionId();
 
@@ -69,7 +69,7 @@ describe("RavenDbSessionStore", () => {
     });
 
     it("should store session document with sid parameter", (done) => {
-      const instance = new RavenDbSessionStore(documentStore);
+      const instance = new RavenDbStore(documentStore);
 
       const sessionId = generateSessionId();
       const otherSessionId = generateSessionId();
@@ -91,7 +91,7 @@ describe("RavenDbSessionStore", () => {
     });
 
     it("should store session data", (done) => {
-      const instance = new RavenDbSessionStore(documentStore);
+      const instance = new RavenDbStore(documentStore);
 
       const sessionId = generateSessionId();
 
@@ -111,7 +111,7 @@ describe("RavenDbSessionStore", () => {
 
   describe("get", () => {
     it("should return stored session", (done) => {
-      const instance = new RavenDbSessionStore(documentStore);
+      const instance = new RavenDbStore(documentStore);
 
       const sessionId = generateSessionId();
 
@@ -127,7 +127,7 @@ describe("RavenDbSessionStore", () => {
     });
 
     it("should return undefined when session doesn't exist", (done) => {
-      const instance = new RavenDbSessionStore(documentStore);
+      const instance = new RavenDbStore(documentStore);
 
       const sessionId = generateSessionId();
 
@@ -141,7 +141,7 @@ describe("RavenDbSessionStore", () => {
 
   describe("destroy", () => {
     it("should delete session", (done) => {
-      const instance = new RavenDbSessionStore(documentStore);
+      const instance = new RavenDbStore(documentStore);
 
       const sessionId = generateSessionId();
 
@@ -161,7 +161,7 @@ describe("RavenDbSessionStore", () => {
     });
 
     it("should not fail when session doesn't exist", (done) => {
-      const instance = new RavenDbSessionStore(documentStore);
+      const instance = new RavenDbStore(documentStore);
 
       const sessionId = generateSessionId();
 
@@ -173,7 +173,7 @@ describe("RavenDbSessionStore", () => {
 
   describe("custom document type", () => {
     it("should store document in custom collection", (done) => {
-      const instance = new RavenDbSessionStore(documentStore, {
+      const instance = new RavenDbStore(documentStore, {
         documentType: "CustomSession",
       });
 

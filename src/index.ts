@@ -1,5 +1,5 @@
-import { RavenDbSessionStore } from "./RavenDbSessionStore";
+import { RavenDbStore } from "./RavenDbStore";
 
-export { RavenDbSessionStore };
+export { RavenDbStore };
 
-export default RavenDbSessionStore;
+export default RavenDbStore;

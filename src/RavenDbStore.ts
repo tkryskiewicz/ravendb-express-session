@@ -1,22 +1,22 @@
 import { Store } from "express-session";
 import { DocumentStore } from "ravendb";
 
-export interface IOptions {
+export interface IRavenDbStoreOptions {
   documentType: string;
 }
 
-export class RavenDbSessionStore extends Store {
-  private static defaultOptions: IOptions = {
+export class RavenDbStore extends Store {
+  private static defaultOptions: IRavenDbStoreOptions = {
     documentType: "Session",
   };
 
-  private options: IOptions;
+  private options: IRavenDbStoreOptions;
 
-  constructor(private documentStore: DocumentStore, options?: Partial<IOptions>) {
+  constructor(private documentStore: DocumentStore, options?: Partial<IRavenDbStoreOptions>) {
     super();
 
     this.options = {
-      ...RavenDbSessionStore.defaultOptions,
+      ...RavenDbStore.defaultOptions,
       ...options,
     };
   }

@@ -20,7 +20,7 @@ describe("RavenDbSessionStore", () => {
     path: "",
     serialize: () => "",
   });
-  const getSession = (sessionId: string): Express.Session => ({
+  const getSession = (sessionId: string, data: object = {}): Express.Session => ({
     cookie: getSessionCookie(),
     destroy: () => undefined,
     id: sessionId,
@@ -28,6 +28,7 @@ describe("RavenDbSessionStore", () => {
     reload: () => undefined,
     save: () => undefined,
     touch: () => undefined,
+    ...data,
   });
 
   const loadSessionDocument = async (id: string) => {
@@ -50,9 +51,7 @@ describe("RavenDbSessionStore", () => {
 
       const sessionId = generateSessionId();
 
-      const session: Express.Session = {
-        id: sessionId,
-      } as any;
+      const session = getSession(sessionId);
 
       instance.set(sessionId, session, () => {
         (async () => {
@@ -72,9 +71,7 @@ describe("RavenDbSessionStore", () => {
       const sessionId = generateSessionId();
       const otherSessionId = generateSessionId();
 
-      const session: Express.Session = {
-        id: otherSessionId,
-      } as any;
+      const session = getSession(otherSessionId);
 
       instance.set(sessionId, session, () => {
         (async () => {
@@ -95,10 +92,7 @@ describe("RavenDbSessionStore", () => {
 
       const sessionId = generateSessionId();
 
-      const session: Express.Session = {
-        data: "data",
-        id: sessionId,
-      } as any;
+      const session = getSession(sessionId, { data: "data" });
 
       instance.set(sessionId, session, () => {
         (async () => {

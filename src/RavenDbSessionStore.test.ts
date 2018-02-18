@@ -1,4 +1,5 @@
 import { DocumentStore } from "ravendb";
+import * as Uuid from "uuid/v1";
 
 import { RavenDbSessionStore } from "./RavenDbSessionStore";
 
@@ -11,7 +12,7 @@ describe("RavenDbSessionStore", () => {
     documentStore.initialize();
   });
 
-  const generateSessionId = () => Math.random().toString().substr(2, 9);
+  const generateSessionId = () => Uuid();
   const getSessionCookie = (): Express.SessionCookie => ({
     expires: false,
     httpOnly: false,

@@ -4,6 +4,11 @@
     "tslint:latest"
   ],
   "rules": {
+    "no-implicit-dependencies": false, // not possible to use peer and dev
+    "no-submodule-imports": [
+      true,
+      "uuid"
+    ],
     "variable-name": [
       true,
       "allow-leading-underscore"

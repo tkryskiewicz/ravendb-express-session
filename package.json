@@ -22,6 +22,11 @@
     "url": "http://tkryskiewicz.com/"
   },
   "contributors": [],
+  "files": [
+    "dist"
+  ],
+  "main": "dist",
+  "types": "dist",
   "engines": {
     "node": "*"
   },
@@ -44,7 +49,7 @@
   "scripts": {
     "build": "tsc",
     "clean": "rimraf dist",
-    "lint": "tslint -p .",
+    "lint": "tslint 'src/**/*.ts'",
     "test": "jest",
     "test:coverage": "jest --coverage"
   }

@@ -9,6 +9,7 @@
     ],
     "module": "commonjs",
     "moduleResolution": "node",
+    "declaration": true,
     "skipLibCheck": true, // ravendb types issue
     "forceConsistentCasingInFileNames": true,
     "strict": true,
@@ -17,5 +18,8 @@
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
     "pretty": true
-  }
+  },
+  "files": [
+    "src/index.ts"
+  ]
 }

@@ -1,9 +1,24 @@
 import { Store } from "express-session";
 import { DocumentStore } from "ravendb";
 
+export interface IOptions {
+  documentType: string;
+}
+
 export class RavenDbSessionStore extends Store {
-  constructor(private documentStore: DocumentStore) {
+  private static defaultOptions: IOptions = {
+    documentType: "Session",
+  };
+
+  private options: IOptions;
+
+  constructor(private documentStore: DocumentStore, options?: Partial<IOptions>) {
     super();
+
+    this.options = {
+      ...RavenDbSessionStore.defaultOptions,
+      ...options,
+    };
   }
 
   public set = (sid: string, session: Express.Session, callback: (err: any) => void) => {
@@ -45,7 +60,7 @@ export class RavenDbSessionStore extends Store {
     };
 
     await documentSession.store(sessionDocument, sessionId, {
-      documentType: "Session",
+      documentType: this.options.documentType,
     });
 
     await documentSession.saveChanges();
@@ -54,7 +69,9 @@ export class RavenDbSessionStore extends Store {
   private async getSession(sessionId: string): Promise<Express.SessionData | undefined> {
     const documentSession = this.documentStore.openSession();
 
-    const sessionDocument = await documentSession.load(sessionId, { documentType: "Session" });
+    const sessionDocument = await documentSession.load(sessionId, {
+      documentType: this.options.documentType,
+    });
 
     return sessionDocument ? {
       ...sessionDocument,
@@ -66,7 +83,9 @@ export class RavenDbSessionStore extends Store {
   private async destroySession(sessionId: string) {
     const documentSession = this.documentStore.openSession();
 
-    await documentSession.delete(sessionId, { documentType: "Session" });
+    await documentSession.delete(sessionId, {
+      documentType: this.options.documentType,
+    });
 
     await documentSession.saveChanges();
   }

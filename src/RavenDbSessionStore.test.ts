@@ -32,10 +32,12 @@ describe("RavenDbSessionStore", () => {
     ...data,
   });
 
-  const loadSessionDocument = async (id: string) => {
+  const loadSessionDocument = async (id: string, collection?: string) => {
     const documentSession = documentStore.openSession();
 
-    const sessionDocument = await documentSession.load(id, { documentType: "Session" });
+    const sessionDocument = await documentSession.load(id, {
+      documentType: collection || "Session",
+    });
 
     return sessionDocument;
   };
@@ -165,6 +167,27 @@ describe("RavenDbSessionStore", () => {
 
       instance.destroy(sessionId, () => {
         done();
+      });
+    });
+  });
+
+  describe("custom document type", () => {
+    it("should store document in custom collection", (done) => {
+      const instance = new RavenDbSessionStore(documentStore, {
+        documentType: "CustomSession",
+      });
+
+      const sessionId = generateSessionId();
+      const session = getSession(sessionId);
+
+      instance.set(sessionId, session, () => {
+        (async () => {
+          const sessionDocument = loadSessionDocument(sessionId, "CustomSession");
+
+          expect(sessionDocument).toBeDefined();
+
+          done();
+        })();
       });
     });
   });

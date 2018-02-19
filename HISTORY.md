@@ -1,4 +1,5 @@
-unreleased
+v0.1.2 / 2018-02-19
+===================
 
 * add instructions to README
 * add HISTORY

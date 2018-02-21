@@ -1,5 +1,5 @@
 import { Store } from "express-session";
-import { DocumentStore } from "ravendb";
+import { DeleteByQueryCommand, DocumentStore, IndexQuery, RequestExecutor } from "ravendb";
 
 export interface SessionDocument {
   data: string;
@@ -65,6 +65,16 @@ export class RavenDbStore extends Store {
       });
   }
 
+  public clear = (callback: (err: any) => void) => {
+    this.clearSessions()
+      .then(() => {
+        callback(undefined);
+      })
+      .catch((error) => {
+        callback(error);
+      });
+  }
+
   public length = (callback: (err: any, length: number) => void) => {
     this.getCount()
       .then((count) => {
@@ -127,6 +137,20 @@ export class RavenDbStore extends Store {
       }, {});
 
     return sessions;
+  }
+
+  private async clearSessions() {
+    const documentSession = this.documentStore.openSession();
+
+    const requestExecutor: RequestExecutor = (documentSession.advanced as any).requestExecutor; // FIXME: hacky!
+
+    const collectionName = this.documentStore.conventions.getCollectionName(this.options.documentType);
+
+    const query = new IndexQuery(`from ${collectionName}`, undefined, undefined, undefined, {
+      waitForNonStaleResults: true,
+    });
+
+    await requestExecutor.execute(new DeleteByQueryCommand(query));
   }
 
   private async getCount() {

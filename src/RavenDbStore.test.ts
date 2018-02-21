@@ -197,6 +197,28 @@ describe("RavenDbStore", () => {
     });
   });
 
+  describe("clear", () => {
+    it("should delete all sessions", (done) => {
+      const documentType = `Session_${Uuid()}`;
+
+      const instance = new RavenDbStore(documentStore, {
+        documentType,
+      });
+
+      const sessionId = generateSessionId();
+
+      instance.set(sessionId, getSession(sessionId), () => {
+        instance.clear(() => {
+          instance.length((_, length) => {
+            expect(length).toBe(0);
+
+            done();
+          });
+        });
+      });
+    });
+  });
+
   describe("length", () => {
     it("should return session count", (done) => {
       const documentType = `Session_${Uuid()}`;

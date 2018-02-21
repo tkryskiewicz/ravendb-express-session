@@ -1,6 +1,10 @@
 import { Store } from "express-session";
 import { DocumentStore } from "ravendb";
 
+export interface ISessionDocument {
+  data: string;
+}
+
 export interface IRavenDbStoreOptions {
   documentType: string;
 }
@@ -51,12 +55,20 @@ export class RavenDbStore extends Store {
       });
   }
 
+  public all = (callback: (err: any, obj: { [sid: string]: Express.SessionData; }) => void) => {
+    this.getAllSessions()
+      .then((sessions) => {
+        callback(undefined, sessions);
+      })
+      .catch((error) => {
+        callback(error, undefined as any);
+      });
+  }
+
   private async setSession(sessionId: string, session: Express.Session) {
     const documentSession = this.documentStore.openSession();
 
-    const sessionDocument = {
-      data: JSON.stringify(session),
-    };
+    const sessionDocument = this.serializeSession(session);
 
     await documentSession.store(sessionDocument, sessionId, {
       documentType: this.options.documentType,
@@ -68,11 +80,11 @@ export class RavenDbStore extends Store {
   private async getSession(sessionId: string): Promise<Express.SessionData | undefined> {
     const documentSession = this.documentStore.openSession();
 
-    const sessionDocument = await documentSession.load(sessionId, {
+    const sessionDocument = await documentSession.load<ISessionDocument>(sessionId, {
       documentType: this.options.documentType,
     });
 
-    return sessionDocument ? JSON.parse(sessionDocument.data) : undefined;
+    return sessionDocument ? this.deserializeSession(sessionDocument) : undefined;
   }
 
   private async destroySession(sessionId: string) {
@@ -83,5 +95,36 @@ export class RavenDbStore extends Store {
     });
 
     await documentSession.saveChanges();
+  }
+
+  private async getAllSessions() {
+    const documentSession = this.documentStore.openSession();
+
+    const sessionDocuments = await documentSession
+      .query<ISessionDocument>({
+        collection: this.options.documentType + "s",
+        documentType: this.options.documentType,
+      })
+      .all();
+
+    const sessions = sessionDocuments
+      .map((document): Express.SessionData => this.deserializeSession(document))
+      .reduce((p: { [sessionId: string]: Express.SessionData }, c) => {
+        p[c.id] = c;
+
+        return p;
+      }, {});
+
+    return sessions;
+  }
+
+  private serializeSession(session: Express.SessionData): ISessionDocument {
+    return {
+      data: JSON.stringify(session),
+    };
+  }
+
+  private deserializeSession(document: ISessionDocument): Express.SessionData {
+    return JSON.parse(document.data);
   }
 }

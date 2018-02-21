@@ -34,7 +34,7 @@ export class RavenDbStore extends Store {
   public get = (sid: string, callback: (err: any, session: Express.SessionData) => void) => {
     this.getSession(sid)
       .then((session) => {
-        callback(undefined, session ? session : undefined as any);
+        callback(undefined, session || undefined as any);
       })
       .catch((error) => {
         callback(error, undefined as any);
@@ -55,8 +55,7 @@ export class RavenDbStore extends Store {
     const documentSession = this.documentStore.openSession();
 
     const sessionDocument = {
-      ...session,
-      id: sessionId,
+      data: JSON.stringify(session),
     };
 
     await documentSession.store(sessionDocument, sessionId, {
@@ -73,11 +72,7 @@ export class RavenDbStore extends Store {
       documentType: this.options.documentType,
     });
 
-    return sessionDocument ? {
-      ...sessionDocument,
-      "@meta": undefined,
-      "cookie": sessionDocument.cookie,
-    } : undefined;
+    return sessionDocument ? JSON.parse(sessionDocument.data) : undefined;
   }
 
   private async destroySession(sessionId: string) {

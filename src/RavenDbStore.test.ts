@@ -95,13 +95,15 @@ describe("RavenDbStore", () => {
 
       const sessionId = generateSessionId();
 
-      const session = getSession(sessionId, { data: "data" });
+      const session = getSession(sessionId, { field: "value" });
 
       instance.set(sessionId, session, () => {
         (async () => {
           const sessionDocument = await loadSessionDocument(sessionId);
 
-          expect(sessionDocument.data).toBe("data");
+          const data = JSON.parse(sessionDocument.data);
+
+          expect(data.field).toBe("value");
 
           done();
         })();

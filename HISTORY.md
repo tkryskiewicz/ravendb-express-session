@@ -1,3 +1,8 @@
+unreleased
+==========
+
+* serialize session data using `JSON.stringify()`
+
 v0.1.2 / 2018-02-19
 ===================
 

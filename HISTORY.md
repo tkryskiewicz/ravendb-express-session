@@ -1,6 +1,8 @@
 unreleased
 ==========
 
+* store options renamed from `IRavenDbStoreOptions` to `RavenDbStoreOptions`
+* implemented `all`, `clear` and `length`
 * serialize session data using `JSON.stringify()`
 
 v0.1.2 / 2018-02-19

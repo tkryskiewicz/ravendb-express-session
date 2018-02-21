@@ -65,6 +65,16 @@ export class RavenDbStore extends Store {
       });
   }
 
+  public length = (callback: (err: any, length: number) => void) => {
+    this.getCount()
+      .then((count) => {
+        callback(undefined, count);
+      })
+      .catch((error) => {
+        callback(error, undefined as any);
+      });
+  }
+
   private async setSession(sessionId: string, session: Express.Session) {
     const documentSession = this.documentStore.openSession();
 
@@ -117,6 +127,20 @@ export class RavenDbStore extends Store {
       }, {});
 
     return sessions;
+  }
+
+  private async getCount() {
+    const documentSession = this.documentStore.openSession();
+
+    const count = await documentSession
+      .query<SessionDocument>({
+        collection: this.documentStore.conventions.getCollectionName(this.options.documentType),
+        documentType: this.options.documentType,
+      })
+      .waitForNonStaleResults()
+      .count();
+
+    return count;
   }
 
   private serializeSession(session: Express.SessionData): SessionDocument {

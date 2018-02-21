@@ -197,6 +197,30 @@ describe("RavenDbStore", () => {
     });
   });
 
+  describe("length", () => {
+    it("should return session count", (done) => {
+      const documentType = `Session_${Uuid()}`;
+
+      const instance = new RavenDbStore(documentStore, {
+        documentType,
+      });
+
+      const sessionAId = generateSessionId();
+
+      instance.set(sessionAId, getSession(sessionAId), () => {
+        const sessionBId = generateSessionId();
+
+        instance.set(sessionBId, getSession(sessionBId), () => {
+          instance.length((err, length) => {
+            expect(length).toBe(2);
+
+            done();
+          });
+        });
+      });
+    });
+  });
+
   describe("custom document type", () => {
     it("should store document in custom collection", (done) => {
       const instance = new RavenDbStore(documentStore, {

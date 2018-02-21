@@ -102,9 +102,10 @@ export class RavenDbStore extends Store {
 
     const sessionDocuments = await documentSession
       .query<SessionDocument>({
-        collection: this.options.documentType + "s",
+        collection: this.documentStore.conventions.getCollectionName(this.options.documentType),
         documentType: this.options.documentType,
       })
+      .waitForNonStaleResults()
       .all();
 
     const sessions = sessionDocuments

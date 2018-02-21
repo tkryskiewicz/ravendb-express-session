@@ -1,22 +1,22 @@
 import { Store } from "express-session";
 import { DocumentStore } from "ravendb";
 
-export interface ISessionDocument {
+export interface SessionDocument {
   data: string;
 }
 
-export interface IRavenDbStoreOptions {
+export interface RavenDbStoreOptions {
   documentType: string;
 }
 
 export class RavenDbStore extends Store {
-  private static defaultOptions: IRavenDbStoreOptions = {
+  private static defaultOptions: RavenDbStoreOptions = {
     documentType: "Session",
   };
 
-  private options: IRavenDbStoreOptions;
+  private options: RavenDbStoreOptions;
 
-  constructor(private documentStore: DocumentStore, options?: Partial<IRavenDbStoreOptions>) {
+  constructor(private documentStore: DocumentStore, options?: Partial<RavenDbStoreOptions>) {
     super();
 
     this.options = {
@@ -80,7 +80,7 @@ export class RavenDbStore extends Store {
   private async getSession(sessionId: string): Promise<Express.SessionData | undefined> {
     const documentSession = this.documentStore.openSession();
 
-    const sessionDocument = await documentSession.load<ISessionDocument>(sessionId, {
+    const sessionDocument = await documentSession.load<SessionDocument>(sessionId, {
       documentType: this.options.documentType,
     });
 
@@ -101,7 +101,7 @@ export class RavenDbStore extends Store {
     const documentSession = this.documentStore.openSession();
 
     const sessionDocuments = await documentSession
-      .query<ISessionDocument>({
+      .query<SessionDocument>({
         collection: this.options.documentType + "s",
         documentType: this.options.documentType,
       })
@@ -118,13 +118,13 @@ export class RavenDbStore extends Store {
     return sessions;
   }
 
-  private serializeSession(session: Express.SessionData): ISessionDocument {
+  private serializeSession(session: Express.SessionData): SessionDocument {
     return {
       data: JSON.stringify(session),
     };
   }
 
-  private deserializeSession(document: ISessionDocument): Express.SessionData {
+  private deserializeSession(document: SessionDocument): Express.SessionData {
     return JSON.parse(document.data);
   }
 }

@@ -4,6 +4,10 @@
     "tslint:latest"
   ],
   "rules": {
+    "interface-name": [
+      true,
+      "never-prefix"
+    ],
     "no-implicit-dependencies": false, // not possible to use peer and dev
     "no-submodule-imports": [
       true,

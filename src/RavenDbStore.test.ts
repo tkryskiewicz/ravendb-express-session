@@ -174,7 +174,7 @@ describe("RavenDbStore", () => {
   });
 
   describe("clear", () => {
-    it("should delete all sessions", (done) => {
+    it("should delete all sessions", async () => {
       const documentType = `Session_${Uuid()}`;
 
       const instance = new RavenDbStore(documentStore, {
@@ -183,14 +183,12 @@ describe("RavenDbStore", () => {
 
       const sessionId = generateSessionId();
 
-      instance.set(sessionId, getSession(sessionId), () => {
-        instance.clear(() => {
-          instance.length((_, length) => {
-            expect(length).toBe(0);
+      await instance.set(sessionId, getSession(sessionId));
 
-            done();
-          });
-        });
+      await instance.clear();
+
+      instance.length((_, length) => {
+        expect(length).toBe(0);
       });
     });
   });

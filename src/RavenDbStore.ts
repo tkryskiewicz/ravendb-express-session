@@ -93,13 +93,19 @@ export class RavenDbStore extends Store {
       });
   }
 
-  public clear = (callback: (err: any) => void) => {
-    this.clearSessions()
+  public clear = (callback?: (err: any) => void) => {
+    return this.clearSessions()
       .then(() => {
-        callback(undefined);
+        if (callback) {
+          callback(undefined);
+        }
       })
       .catch((error) => {
-        callback(error);
+        if (callback) {
+          callback(error);
+        }
+
+        throw error;
       });
   }
 

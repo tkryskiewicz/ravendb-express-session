@@ -1,5 +1,5 @@
-unreleased
-==========
+v0.2 / 2018-02-22
+=================
 
 * store options renamed from `IRavenDbStoreOptions` to `RavenDbStoreOptions`
 * implemented `all`, `clear` and `length`

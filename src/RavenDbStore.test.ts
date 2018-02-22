@@ -152,7 +152,7 @@ describe("RavenDbStore", () => {
   });
 
   describe("all", () => {
-    it("should return all sessions", (done) => {
+    it("should return all sessions", async () => {
       const documentType = `Session_${Uuid()}`;
 
       const instance = new RavenDbStore(documentStore, {
@@ -161,17 +161,15 @@ describe("RavenDbStore", () => {
 
       const sessionAId = generateSessionId();
 
-      instance.set(sessionAId, getSession(sessionAId), () => {
-        const sessionBId = generateSessionId();
+      await instance.set(sessionAId, getSession(sessionAId));
 
-        instance.set(sessionBId, getSession(sessionBId), () => {
-          instance.all((err, sessions) => {
-            expect(Object.keys(sessions).length).toBe(2);
+      const sessionBId = generateSessionId();
 
-            done();
-          });
-        });
-      });
+      await instance.set(sessionBId, getSession(sessionBId));
+
+      const sessions = await instance.all();
+
+      expect(Object.keys(sessions).length).toBe(2);
     });
   });
 

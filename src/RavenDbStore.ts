@@ -75,13 +75,21 @@ export class RavenDbStore extends Store {
       });
   }
 
-  public all = (callback: (err: any, obj: { [sid: string]: Express.SessionData; }) => void) => {
-    this.getAllSessions()
+  public all = (callback?: (err: any, obj: { [sid: string]: Express.SessionData; }) => void) => {
+    return this.getAllSessions()
       .then((sessions) => {
-        callback(undefined, sessions);
+        if (callback) {
+          callback(undefined, sessions);
+        }
+
+        return sessions;
       })
       .catch((error) => {
-        callback(error, undefined as any);
+        if (callback) {
+          callback(error, undefined as any);
+        }
+
+        throw error;
       });
   }
 

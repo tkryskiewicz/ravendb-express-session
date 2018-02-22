@@ -109,13 +109,21 @@ export class RavenDbStore extends Store {
       });
   }
 
-  public length = (callback: (err: any, length: number) => void) => {
-    this.getCount()
+  public length = (callback?: (err: any, length: number) => void) => {
+    return this.getCount()
       .then((count) => {
-        callback(undefined, count);
+        if (callback) {
+          callback(undefined, count);
+        }
+
+        return count;
       })
       .catch((error) => {
-        callback(error, undefined as any);
+        if (callback) {
+          callback(error, undefined as any);
+        }
+
+        throw error;
       });
   }
 

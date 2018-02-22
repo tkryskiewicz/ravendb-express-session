@@ -216,7 +216,7 @@ describe("RavenDbStore", () => {
   });
 
   describe("custom document type", () => {
-    it("should store document in custom collection", (done) => {
+    it("should store document in custom collection", async () => {
       const instance = new RavenDbStore(documentStore, {
         documentType: "CustomSession",
       });
@@ -224,15 +224,11 @@ describe("RavenDbStore", () => {
       const sessionId = generateSessionId();
       const session = getSession(sessionId);
 
-      instance.set(sessionId, session, () => {
-        (async () => {
-          const sessionDocument = loadSessionDocument(sessionId, "CustomSession");
+      await instance.set(sessionId, session);
 
-          expect(sessionDocument).toBeDefined();
+      const sessionDocument = await loadSessionDocument(sessionId, "CustomSession");
 
-          done();
-        })();
-      });
+      expect(sessionDocument).toBeDefined();
     });
   });
 });

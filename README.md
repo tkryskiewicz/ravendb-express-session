@@ -44,6 +44,15 @@ Default: `"Session"`
 
 Changes the collection in which sessions are stored.
 
+## Available methods
+
+Besides the required `set`, `get` and `destroy` methods, the following are also available:
+- `all`, returns all sessions as a sessionId -> session key-value object
+- `clear`, deletes all sessions
+- `length` are also available. 
+
+`touch` method is comming soon.
+
 ## License
 
 [MIT](https://opensource.org/licenses/MIT)

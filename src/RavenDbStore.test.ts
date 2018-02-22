@@ -100,32 +100,28 @@ describe("RavenDbStore", () => {
   });
 
   describe("get", () => {
-    it("should return stored session", (done) => {
+    it("should return stored session", async () => {
       const instance = new RavenDbStore(documentStore);
 
       const sessionId = generateSessionId();
 
       const session = getSession(sessionId);
 
-      instance.set(sessionId, session, () => {
-        instance.get(sessionId, (_err, sessionData) => {
-          expect(sessionData).toBeDefined();
+      await instance.set(sessionId, session);
 
-          done();
-        });
-      });
+      const sessionData = await instance.get(sessionId);
+
+      expect(sessionData).toBeDefined();
     });
 
-    it("should return undefined when session doesn't exist", (done) => {
+    it("should return undefined when session doesn't exist", async () => {
       const instance = new RavenDbStore(documentStore);
 
       const sessionId = generateSessionId();
 
-      instance.get(sessionId, (_err, session) => {
-        expect(session).toBeUndefined();
+      const sessionData = await instance.get(sessionId);
 
-        done();
-      });
+      expect(sessionData).toBeUndefined();
     });
   });
 

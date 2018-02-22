@@ -41,13 +41,21 @@ export class RavenDbStore extends Store {
       });
   }
 
-  public get = (sid: string, callback: (err: any, session: Express.SessionData) => void) => {
-    this.getSession(sid)
-      .then((session) => {
-        callback(undefined, session || undefined as any);
+  public get = (sid: string, callback?: (err: any, sessionData: Express.SessionData) => void) => {
+    return this.getSessionData(sid)
+      .then((sessionData) => {
+        if (callback) {
+          callback(undefined, sessionData as any);
+        }
+
+        return sessionData;
       })
       .catch((error) => {
-        callback(error, undefined as any);
+        if (callback) {
+          callback(error, undefined as any);
+        }
+
+        throw error;
       });
   }
 
@@ -103,7 +111,7 @@ export class RavenDbStore extends Store {
     await documentSession.saveChanges();
   }
 
-  private async getSession(sessionId: string): Promise<Express.SessionData | undefined> {
+  private async getSessionData(sessionId: string): Promise<Express.SessionData | undefined> {
     const documentSession = this.documentStore.openSession();
 
     const sessionDocument = await documentSession.load<SessionDocument>(sessionId, {

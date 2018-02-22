@@ -59,13 +59,19 @@ export class RavenDbStore extends Store {
       });
   }
 
-  public destroy = (sid: string, callback: (err: any) => void) => {
-    this.destroySession(sid)
+  public destroy = (sid: string, callback?: (err: any) => void) => {
+    return this.destroySession(sid)
       .then(() => {
-        callback(undefined);
+        if (callback) {
+          callback(undefined);
+        }
       })
       .catch((error) => {
-        callback(error);
+        if (callback) {
+          callback(error);
+        }
+
+        throw error;
       });
   }
 

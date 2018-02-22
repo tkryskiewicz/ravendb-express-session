@@ -126,34 +126,28 @@ describe("RavenDbStore", () => {
   });
 
   describe("destroy", () => {
-    it("should delete session", (done) => {
+    it("should delete session", async () => {
       const instance = new RavenDbStore(documentStore);
 
       const sessionId = generateSessionId();
 
       const session = getSession(sessionId);
 
-      instance.set(sessionId, session, () => {
-        instance.destroy(sessionId, () => {
-          (async () => {
-            const sessionDocument = await loadSessionDocument(sessionId);
+      await instance.set(sessionId, session);
 
-            expect(sessionDocument).toBeNull();
+      await instance.destroy(sessionId);
 
-            done();
-          })();
-        });
-      });
+      const sessionDocument = await loadSessionDocument(sessionId);
+
+      expect(sessionDocument).toBeNull();
     });
 
-    it("should not fail when session doesn't exist", (done) => {
+    it("should not fail when session doesn't exist", async () => {
       const instance = new RavenDbStore(documentStore);
 
       const sessionId = generateSessionId();
 
-      instance.destroy(sessionId, () => {
-        done();
-      });
+      await instance.destroy(sessionId);
     });
   });
 

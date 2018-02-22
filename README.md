@@ -49,9 +49,7 @@ Changes the collection in which sessions are stored.
 Besides the required `set`, `get` and `destroy` methods, the following are also available:
 - `all`, returns all sessions as a sessionId -> session key-value object
 - `clear`, deletes all sessions
-- `length` are also available. 
-
-`touch` method is comming soon.
+- `length`, returns the count of all sessions. 
 
 ## License
 

@@ -49,26 +49,22 @@ describe("RavenDbStore", () => {
   });
 
   describe("set", () => {
-    it("should store session document", (done) => {
+    it("should store session document", async () => {
       const instance = new RavenDbStore(documentStore);
 
       const sessionId = generateSessionId();
 
       const session = getSession(sessionId);
 
-      instance.set(sessionId, session, () => {
-        (async () => {
-          const sessionDocument = await loadSessionDocument(sessionId);
+      await instance.set(sessionId, session);
 
-          expect(sessionDocument).toBeDefined();
-          expect(sessionDocument.id).toBe(sessionId);
+      const sessionDocument = await loadSessionDocument(sessionId);
 
-          done();
-        })();
-      });
+      expect(sessionDocument).toBeDefined();
+      expect(sessionDocument.id).toBe(sessionId);
     });
 
-    it("should store session document with sid parameter", (done) => {
+    it("should store session document with sid parameter", async () => {
       const instance = new RavenDbStore(documentStore);
 
       const sessionId = generateSessionId();
@@ -76,38 +72,30 @@ describe("RavenDbStore", () => {
 
       const session = getSession(otherSessionId);
 
-      instance.set(sessionId, session, () => {
-        (async () => {
-          const sessionDocument = await loadSessionDocument(sessionId);
-          const otherSessionDocument = await loadSessionDocument(otherSessionId);
+      await instance.set(sessionId, session);
 
-          expect(sessionDocument).toBeDefined();
-          expect(sessionDocument.id).toBe(sessionId);
-          expect(otherSessionDocument).toBeNull();
+      const sessionDocument = await loadSessionDocument(sessionId);
+      const otherSessionDocument = await loadSessionDocument(otherSessionId);
 
-          done();
-        })();
-      });
+      expect(sessionDocument).not.toBeNull();
+      expect(sessionDocument.id).toBe(sessionId);
+      expect(otherSessionDocument).toBeNull();
     });
 
-    it("should store session data", (done) => {
+    it("should store session data", async () => {
       const instance = new RavenDbStore(documentStore);
 
       const sessionId = generateSessionId();
 
       const session = getSession(sessionId, { field: "value" });
 
-      instance.set(sessionId, session, () => {
-        (async () => {
-          const sessionDocument = await loadSessionDocument(sessionId);
+      await instance.set(sessionId, session);
 
-          const data = JSON.parse(sessionDocument.data);
+      const sessionDocument = await loadSessionDocument(sessionId);
 
-          expect(data.field).toBe("value");
+      const data = JSON.parse(sessionDocument.data);
 
-          done();
-        })();
-      });
+      expect(data.field).toBe("value");
     });
   });
 

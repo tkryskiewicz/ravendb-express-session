@@ -51,6 +51,34 @@ Besides the required `set`, `get` and `destroy` methods, the following are also 
 - `clear`, deletes all sessions
 - `length`, returns the count of all sessions. 
 
+## Using with promises
+
+All implemented methods support promises, so it's easier to use them in more modern codebases.
+
+When using promises:
+
+```js
+store.destroy("sessionId")
+  .then(() => {
+    // success
+  })
+  .catch((error) => {
+    // handle error
+  });
+```
+
+or using async/await:
+
+```js
+try {
+  await store.destroy("sessionId");
+
+  // success
+} catch (error) {
+  // handle error
+}
+```
+
 ## License
 
 [MIT](https://opensource.org/licenses/MIT)

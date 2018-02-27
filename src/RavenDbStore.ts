@@ -1,5 +1,13 @@
 import { Store } from "express-session";
-import { DeleteByQueryCommand, DocumentStore, IndexQuery, RequestExecutor } from "ravendb";
+import {
+  DeleteByQueryCommand,
+  DocumentStore,
+  IDocumentSession,
+  IndexQuery,
+  PatchByQueryCommand,
+  QueryOperationOptions,
+  RequestExecutor,
+} from "ravendb";
 
 export interface SessionDocument {
   data: string;
@@ -51,6 +59,10 @@ export class RavenDbStore extends Store {
 
   public length = (callback?: (err: any, length: number) => void) => {
     return this.handlePromise(this.getCount(), callback);
+  }
+
+  public touch = (sid: string, session: Express.Session, callback?: (err: any) => void) => {
+    return this.handlePromise(this.touchSession(sid, session), callback);
   }
 
   private async setSession(sessionId: string, session: Express.Session) {
@@ -110,7 +122,7 @@ export class RavenDbStore extends Store {
   private async clearSessions() {
     const documentSession = this.documentStore.openSession();
 
-    const requestExecutor: RequestExecutor = (documentSession.advanced as any).requestExecutor; // FIXME: hacky!
+    const requestExecutor = this.getRequestExecutor(documentSession);
 
     const collectionName = this.documentStore.conventions.getCollectionName(this.options.documentType);
 
@@ -135,10 +147,55 @@ export class RavenDbStore extends Store {
     return count;
   }
 
+  private async touchSession(sessionId: string, session: Express.Session) {
+    if (!session.cookie.maxAge) {
+      return;
+    }
+
+    const documentSession = this.documentStore.openSession();
+
+    const requestExecutor = this.getRequestExecutor(documentSession);
+
+    const collectionName = this.documentStore.conventions.getCollectionName(this.options.documentType);
+
+    const expirationDate = this.getExpirationDate(session.cookie.maxAge);
+
+    expirationDate.setFullYear(2020);
+
+    const query = new IndexQuery(
+      `from ${collectionName} as s ` +
+      `where id(s) = "${sessionId}" ` +
+      `update {
+        s["@metadata"]["@expires"] = "${expirationDate.toISOString()}";
+        s.Test = "TEST";
+       }`,
+      undefined, undefined, undefined, {
+        waitForNonStaleResults: true,
+      });
+
+    await requestExecutor.execute(new PatchByQueryCommand(query, new QueryOperationOptions(false)));
+  }
+
+  private getRequestExecutor(documentSession: IDocumentSession) {
+    return (documentSession.advanced as any).requestExecutor as RequestExecutor; // FIXME: hacky!
+  }
+
+  private getExpirationDate(maxAge: number) {
+    return new Date(new Date().valueOf() + maxAge);
+  }
+
   private serializeSession(session: Express.SessionData): SessionDocument {
-    return {
+    const document: any = {
       data: JSON.stringify(session),
     };
+
+    if (session.cookie.maxAge !== null) {
+      document["@metadata"] = {
+        "@expires": this.getExpirationDate(session.cookie.maxAge).toISOString(),
+      };
+    }
+
+    return document;
   }
 
   private deserializeSession(document: SessionDocument): Express.SessionData {

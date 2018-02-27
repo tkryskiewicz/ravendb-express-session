@@ -97,6 +97,25 @@ describe("RavenDbStore", () => {
 
       expect(data.field).toBe("value");
     });
+
+    it("should set expiration", async () => {
+      const documentType = `Session_${Uuid()}`;
+
+      const instance = new RavenDbStore(documentStore, {
+        documentType,
+      });
+
+      const sessionId = generateSessionId();
+      const session = getSession(sessionId);
+
+      session.cookie.maxAge = 60 * 1000;
+
+      await instance.set(sessionId, session);
+
+      const sessionDocument = await loadSessionDocument(sessionId, documentType);
+
+      expect(sessionDocument["@metadata"]["@expires"]).toBeDefined();
+    });
   });
 
   describe("get", () => {
@@ -212,6 +231,37 @@ describe("RavenDbStore", () => {
       const length = await instance.length();
 
       expect(length).toBe(2);
+    });
+  });
+
+  describe("touch", () => {
+    it("should update expiration", async (done) => {
+      const documentType = `Session_${Uuid()}`;
+
+      const instance = new RavenDbStore(documentStore, {
+        documentType,
+      });
+
+      const sessionId = generateSessionId();
+      const session = getSession(sessionId);
+
+      session.cookie.maxAge = 20 * 60 * 1000;
+
+      await instance.set(sessionId, session);
+
+      const sessionDocument = await loadSessionDocument(sessionId, documentType);
+
+      setTimeout(() => {
+        (async () => {
+          await instance.touch(sessionId, session);
+
+          const updatedSessionDocument = await loadSessionDocument(sessionId, documentType);
+
+          expect(updatedSessionDocument["@metadata"]["@expires"]).not.toBe(sessionDocument["@metadata"]["@expires"]);
+
+          done();
+        })();
+      }, 4000);
     });
   });
 

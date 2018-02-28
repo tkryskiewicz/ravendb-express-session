@@ -235,7 +235,7 @@ describe("RavenDbStore", () => {
   });
 
   describe("touch", () => {
-    it("should update expiration", async (done) => {
+    it("should update expiration", async () => {
       const documentType = `Session_${Uuid()}`;
 
       const instance = new RavenDbStore(documentStore, {
@@ -251,17 +251,11 @@ describe("RavenDbStore", () => {
 
       const sessionDocument = await loadSessionDocument(sessionId, documentType);
 
-      setTimeout(() => {
-        (async () => {
-          await instance.touch(sessionId, session);
+      await instance.touch(sessionId, session);
 
-          const updatedSessionDocument = await loadSessionDocument(sessionId, documentType);
+      const updatedSessionDocument = await loadSessionDocument(sessionId, documentType);
 
-          expect(updatedSessionDocument["@metadata"]["@expires"]).not.toBe(sessionDocument["@metadata"]["@expires"]);
-
-          done();
-        })();
-      }, 4000);
+      expect(updatedSessionDocument["@metadata"]["@expires"]).not.toBe(sessionDocument["@metadata"]["@expires"]);
     });
   });
 

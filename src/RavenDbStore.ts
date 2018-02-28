@@ -4,12 +4,12 @@ import {
   DocumentStore,
   IDocumentSession,
   IndexQuery,
-  PatchByQueryCommand,
-  QueryOperationOptions,
+  PatchCommand,
+  PatchRequest,
   RequestExecutor,
 } from "ravendb";
 
-export interface SessionDocument {
+interface SessionDocument {
   data: string;
 }
 
@@ -156,22 +156,11 @@ export class RavenDbStore extends Store {
 
     const requestExecutor = this.getRequestExecutor(documentSession);
 
-    const collectionName = this.documentStore.conventions.getCollectionName(this.options.documentType);
-
     const expirationDate = this.getExpirationDate(session.cookie.maxAge);
 
-    const query = new IndexQuery(
-      `from ${collectionName} as s ` +
-      `where id(s) = "${sessionId}" ` +
-      `update {
-        s["@metadata"]["@expires"] = "${expirationDate.toISOString()}";
-        s.Test = "TEST";
-       }`,
-      undefined, undefined, undefined, {
-        waitForNonStaleResults: true,
-      });
+    const request = new PatchRequest(`this.Test = "TEST"; this["@metadata"]["@expires"] = "${expirationDate.toISOString()}"`);
 
-    await requestExecutor.execute(new PatchByQueryCommand(query, new QueryOperationOptions(false)));
+    await requestExecutor.execute(new PatchCommand(sessionId, request));
   }
 
   private getRequestExecutor(documentSession: IDocumentSession) {

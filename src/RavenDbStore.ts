@@ -160,8 +160,6 @@ export class RavenDbStore extends Store {
 
     const expirationDate = this.getExpirationDate(session.cookie.maxAge);
 
-    expirationDate.setFullYear(2020);
-
     const query = new IndexQuery(
       `from ${collectionName} as s ` +
       `where id(s) = "${sessionId}" ` +

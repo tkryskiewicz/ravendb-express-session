@@ -1,13 +1,14 @@
 import { DocumentStore } from "ravendb";
 import * as Uuid from "uuid/v1";
 
+import { testConfig } from "../test.config";
 import { RavenDbStore } from "./RavenDbStore";
 
 describe("RavenDbStore", () => {
   let documentStore: DocumentStore;
 
   beforeAll(() => {
-    documentStore = new DocumentStore("http://127.0.0.1:8080", "Test");
+    documentStore = new DocumentStore(`http://${testConfig.ravenDbHost}:${testConfig.ravenDbPort}`, "Test");
 
     documentStore.initialize();
   });

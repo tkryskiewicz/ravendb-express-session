@@ -3,7 +3,6 @@ import {
   DeleteByQueryCommand,
   DocumentStore,
   IDocumentSession,
-  IndexQuery,
   PatchCommand,
   PatchRequest,
   RequestExecutor,
@@ -107,7 +106,6 @@ export class RavenDbStore extends Store {
     const sessionDocuments = await documentSession
       .query<SessionDocument>({
         collection: this.documentStore.conventions.getCollectionName(this._options.documentType),
-        documentType: this._options.documentType,
       })
       .waitForNonStaleResults()
       .all();
@@ -128,11 +126,11 @@ export class RavenDbStore extends Store {
 
     const requestExecutor = this.getRequestExecutor(documentSession);
 
-    const collectionName = this.documentStore.conventions.getCollectionName(this._options.documentType);
-
-    const query = new IndexQuery(`from ${collectionName}`, undefined, undefined, undefined, {
-      waitForNonStaleResults: true,
-    });
+    const query = documentSession.query({
+      collection: this.documentStore.conventions.getCollectionName(this._options.documentType),
+    })
+      .waitForNonStaleResults()
+      .getIndexQuery();
 
     await requestExecutor.execute(new DeleteByQueryCommand(query));
   }
@@ -141,9 +139,8 @@ export class RavenDbStore extends Store {
     const documentSession = this.documentStore.openSession();
 
     const count = await documentSession
-      .query<SessionDocument>({
+      .query({
         collection: this.documentStore.conventions.getCollectionName(this._options.documentType),
-        documentType: this._options.documentType,
       })
       .waitForNonStaleResults()
       .count();

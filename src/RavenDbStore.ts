@@ -158,6 +158,7 @@ export class RavenDbStore extends Store {
 
     const expirationDate = this.getExpirationDate(session.cookie.maxAge);
 
+    // FIXME: without updating non-metadata props it doesn't seem to update document
     const request = new PatchRequest(`this.Test = "TEST"; this["@metadata"]["@expires"] = "${expirationDate.toISOString()}"`);
 
     await requestExecutor.execute(new PatchCommand(sessionId, request));
@@ -177,8 +178,10 @@ export class RavenDbStore extends Store {
     };
 
     if (session.cookie.maxAge !== null) {
+      const expirationDate = this.getExpirationDate(session.cookie.maxAge);
+
       document["@metadata"] = {
-        "@expires": this.getExpirationDate(session.cookie.maxAge).toISOString(),
+        "@expires": expirationDate.toISOString(),
       };
     }
 

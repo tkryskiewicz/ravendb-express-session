@@ -2,6 +2,8 @@ import { DeleteByQueryCommand, DocumentStore, QueryOperationOptions, RequestExec
 import * as Uuid from "uuid/v1";
 
 import { testConfig } from "../test.config";
+import { deleteAllSessionDocuments, generateSessionId, getSession, getSessionCookie, loadSessionDocument } from "./testHelpers";
+
 import { RavenDbStore } from "./RavenDbStore";
 
 describe("RavenDbStore", () => {
@@ -14,48 +16,6 @@ describe("RavenDbStore", () => {
 
     documentStore.initialize();
   });
-
-  const generateSessionId = () => Uuid();
-  const getSessionCookie = (): Express.SessionCookie => ({
-    expires: false,
-    httpOnly: false,
-    maxAge: 0,
-    originalMaxAge: 0,
-    path: "",
-    serialize: () => "",
-  });
-  const getSession = (sessionId: string, data: object = {}): Express.Session => ({
-    cookie: getSessionCookie(),
-    destroy: () => undefined,
-    id: sessionId,
-    regenerate: () => undefined,
-    reload: () => undefined,
-    save: () => undefined,
-    touch: () => undefined,
-    ...data,
-  });
-
-  const loadSessionDocument = async (id: string, documentType?: string) => {
-    const documentSession = documentStore.openSession();
-
-    const sessionDocument = await documentSession.load(id, {
-      documentType: documentType || RavenDbStore.defaultOptions.documentType,
-    });
-
-    return sessionDocument;
-  };
-
-  const deleteAllSessionDocuments = async (store: RavenDbStore) => {
-    const documentSession = documentStore.openSession();
-
-    const requestExecutor: RequestExecutor = (documentSession.advanced as any).requestExecutor;
-
-    const query = documentSession.query({
-      collection: documentStore.conventions.getCollectionName(store.options.documentType),
-    }).getIndexQuery();
-
-    await requestExecutor.execute(new DeleteByQueryCommand(query));
-  };
 
   it("should be constructable", () => {
     const instance = new RavenDbStore(documentStore);
@@ -82,7 +42,7 @@ describe("RavenDbStore", () => {
 
         await instance.set(sessionId, session);
 
-        const sessionDocument = await loadSessionDocument(sessionId);
+        const sessionDocument = await loadSessionDocument(instance, sessionId);
 
         expect(sessionDocument).toBeDefined();
         expect(sessionDocument.id).toBe(sessionId);
@@ -96,8 +56,8 @@ describe("RavenDbStore", () => {
 
         await instance.set(sessionId, session);
 
-        const sessionDocument = await loadSessionDocument(sessionId);
-        const otherSessionDocument = await loadSessionDocument(otherSessionId);
+        const sessionDocument = await loadSessionDocument(instance, sessionId);
+        const otherSessionDocument = await loadSessionDocument(instance, otherSessionId);
 
         expect(sessionDocument).not.toBeNull();
         expect(sessionDocument.id).toBe(sessionId);
@@ -111,7 +71,7 @@ describe("RavenDbStore", () => {
 
         await instance.set(sessionId, session);
 
-        const sessionDocument = await loadSessionDocument(sessionId);
+        const sessionDocument = await loadSessionDocument(instance, sessionId);
 
         const data = JSON.parse(sessionDocument.data);
 
@@ -126,7 +86,7 @@ describe("RavenDbStore", () => {
 
         await instance.set(sessionId, session);
 
-        const sessionDocument = await loadSessionDocument(sessionId);
+        const sessionDocument = await loadSessionDocument(instance, sessionId);
 
         expect(sessionDocument["@metadata"]["@expires"]).toBeDefined();
       });
@@ -164,7 +124,7 @@ describe("RavenDbStore", () => {
 
         await instance.destroy(sessionId);
 
-        const sessionDocument = await loadSessionDocument(sessionId);
+        const sessionDocument = await loadSessionDocument(instance, sessionId);
 
         expect(sessionDocument).toBeNull();
       });
@@ -231,11 +191,11 @@ describe("RavenDbStore", () => {
 
         await instance.set(sessionId, session);
 
-        const sessionDocument = await loadSessionDocument(sessionId);
+        const sessionDocument = await loadSessionDocument(instance, sessionId);
 
         await instance.touch(sessionId, session);
 
-        const updatedSessionDocument = await loadSessionDocument(sessionId);
+        const updatedSessionDocument = await loadSessionDocument(instance, sessionId);
 
         expect(updatedSessionDocument["@metadata"]["@expires"]).not.toBe(sessionDocument["@metadata"]["@expires"]);
       });
@@ -254,7 +214,7 @@ describe("RavenDbStore", () => {
 
         await instance.set(sessionId, session);
 
-        const sessionDocument = await loadSessionDocument(sessionId, "CustomSession");
+        const sessionDocument = await loadSessionDocument(instance, sessionId, "CustomSession");
 
         expect(sessionDocument).toBeDefined();
       });

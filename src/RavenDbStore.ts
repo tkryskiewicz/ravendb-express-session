@@ -28,7 +28,7 @@ export class RavenDbStore extends Store {
 
   private _options: RavenDbStoreOptions;
 
-  constructor(private documentStore: DocumentStore, options?: Partial<RavenDbStoreOptions>) {
+  constructor(public readonly documentStore: DocumentStore, options?: Partial<RavenDbStoreOptions>) {
     super();
 
     this._options = {

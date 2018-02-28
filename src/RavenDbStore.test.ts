@@ -1,4 +1,4 @@
-import { DocumentStore } from "ravendb";
+import { DeleteByQueryCommand, DocumentStore, QueryOperationOptions, RequestExecutor } from "ravendb";
 import * as Uuid from "uuid/v1";
 
 import { testConfig } from "../test.config";
@@ -8,7 +8,9 @@ describe("RavenDbStore", () => {
   let documentStore: DocumentStore;
 
   beforeAll(() => {
-    documentStore = new DocumentStore(`http://${testConfig.ravenDbHost}:${testConfig.ravenDbPort}`, "Test");
+    const { ravenDbHost, ravenDbPort } = testConfig;
+
+    documentStore = new DocumentStore(`http://${ravenDbHost}:${ravenDbPort}`, "Test");
 
     documentStore.initialize();
   });
@@ -33,14 +35,26 @@ describe("RavenDbStore", () => {
     ...data,
   });
 
-  const loadSessionDocument = async (id: string, collection?: string) => {
+  const loadSessionDocument = async (id: string, documentType?: string) => {
     const documentSession = documentStore.openSession();
 
     const sessionDocument = await documentSession.load(id, {
-      documentType: collection || "Session",
+      documentType: documentType || RavenDbStore.defaultOptions.documentType,
     });
 
     return sessionDocument;
+  };
+
+  const deleteAllSessionDocuments = async (store: RavenDbStore) => {
+    const documentSession = documentStore.openSession();
+
+    const requestExecutor: RequestExecutor = (documentSession.advanced as any).requestExecutor;
+
+    const query = documentSession.query({
+      collection: documentStore.conventions.getCollectionName(store.options.documentType),
+    }).getIndexQuery();
+
+    await requestExecutor.execute(new DeleteByQueryCommand(query));
   };
 
   it("should be constructable", () => {
@@ -49,231 +63,201 @@ describe("RavenDbStore", () => {
     expect(instance).toBeDefined();
   });
 
-  describe("set", () => {
-    it("should store session document", async () => {
-      const instance = new RavenDbStore(documentStore);
+  describe("methods", () => {
+    let instance: RavenDbStore;
 
-      const sessionId = generateSessionId();
-
-      const session = getSession(sessionId);
-
-      await instance.set(sessionId, session);
-
-      const sessionDocument = await loadSessionDocument(sessionId);
-
-      expect(sessionDocument).toBeDefined();
-      expect(sessionDocument.id).toBe(sessionId);
+    beforeEach(() => {
+      instance = new RavenDbStore(documentStore);
     });
 
-    it("should store session document with sid parameter", async () => {
-      const instance = new RavenDbStore(documentStore);
-
-      const sessionId = generateSessionId();
-      const otherSessionId = generateSessionId();
-
-      const session = getSession(otherSessionId);
-
-      await instance.set(sessionId, session);
-
-      const sessionDocument = await loadSessionDocument(sessionId);
-      const otherSessionDocument = await loadSessionDocument(otherSessionId);
-
-      expect(sessionDocument).not.toBeNull();
-      expect(sessionDocument.id).toBe(sessionId);
-      expect(otherSessionDocument).toBeNull();
+    afterEach(async () => {
+      await deleteAllSessionDocuments(instance);
     });
 
-    it("should store session data", async () => {
-      const instance = new RavenDbStore(documentStore);
+    describe("set method", () => {
+      it("should store session document", async () => {
+        const sessionId = generateSessionId();
 
-      const sessionId = generateSessionId();
+        const session = getSession(sessionId);
 
-      const session = getSession(sessionId, { field: "value" });
+        await instance.set(sessionId, session);
 
-      await instance.set(sessionId, session);
+        const sessionDocument = await loadSessionDocument(sessionId);
 
-      const sessionDocument = await loadSessionDocument(sessionId);
-
-      const data = JSON.parse(sessionDocument.data);
-
-      expect(data.field).toBe("value");
-    });
-
-    it("should set expiration", async () => {
-      const documentType = `Session_${Uuid()}`;
-
-      const instance = new RavenDbStore(documentStore, {
-        documentType,
+        expect(sessionDocument).toBeDefined();
+        expect(sessionDocument.id).toBe(sessionId);
       });
 
-      const sessionId = generateSessionId();
-      const session = getSession(sessionId);
+      it("should store session document with sid parameter", async () => {
+        const sessionId = generateSessionId();
+        const otherSessionId = generateSessionId();
 
-      session.cookie.maxAge = 60 * 1000;
+        const session = getSession(otherSessionId);
 
-      await instance.set(sessionId, session);
+        await instance.set(sessionId, session);
 
-      const sessionDocument = await loadSessionDocument(sessionId, documentType);
+        const sessionDocument = await loadSessionDocument(sessionId);
+        const otherSessionDocument = await loadSessionDocument(otherSessionId);
 
-      expect(sessionDocument["@metadata"]["@expires"]).toBeDefined();
+        expect(sessionDocument).not.toBeNull();
+        expect(sessionDocument.id).toBe(sessionId);
+        expect(otherSessionDocument).toBeNull();
+      });
+
+      it("should store session data", async () => {
+        const sessionId = generateSessionId();
+
+        const session = getSession(sessionId, { field: "value" });
+
+        await instance.set(sessionId, session);
+
+        const sessionDocument = await loadSessionDocument(sessionId);
+
+        const data = JSON.parse(sessionDocument.data);
+
+        expect(data.field).toBe("value");
+      });
+
+      it("should set expiration", async () => {
+        const sessionId = generateSessionId();
+        const session = getSession(sessionId);
+
+        session.cookie.maxAge = 60 * 1000;
+
+        await instance.set(sessionId, session);
+
+        const sessionDocument = await loadSessionDocument(sessionId);
+
+        expect(sessionDocument["@metadata"]["@expires"]).toBeDefined();
+      });
+    });
+
+    describe("get method", () => {
+      it("should return stored session", async () => {
+        const sessionId = generateSessionId();
+
+        const session = getSession(sessionId);
+
+        await instance.set(sessionId, session);
+
+        const sessionData = await instance.get(sessionId);
+
+        expect(sessionData).toBeDefined();
+      });
+
+      it("should return undefined when session doesn't exist", async () => {
+        const sessionId = generateSessionId();
+
+        const sessionData = await instance.get(sessionId);
+
+        expect(sessionData).toBeUndefined();
+      });
+    });
+
+    describe("destroy method", () => {
+      it("should delete session", async () => {
+        const sessionId = generateSessionId();
+
+        const session = getSession(sessionId);
+
+        await instance.set(sessionId, session);
+
+        await instance.destroy(sessionId);
+
+        const sessionDocument = await loadSessionDocument(sessionId);
+
+        expect(sessionDocument).toBeNull();
+      });
+
+      it("should not fail when session doesn't exist", async () => {
+        const sessionId = generateSessionId();
+
+        await instance.destroy(sessionId);
+      });
+    });
+
+    describe("all method", () => {
+      it("should return all sessions", async () => {
+        const sessionAId = generateSessionId();
+
+        await instance.set(sessionAId, getSession(sessionAId));
+
+        const sessionBId = generateSessionId();
+
+        await instance.set(sessionBId, getSession(sessionBId));
+
+        const sessions = await instance.all();
+
+        expect(Object.keys(sessions).length).toBe(2);
+      });
+    });
+
+    describe("clear method", () => {
+      it("should delete all sessions", async () => {
+        const sessionId = generateSessionId();
+
+        await instance.set(sessionId, getSession(sessionId));
+
+        await instance.clear();
+
+        instance.length((_, length) => {
+          expect(length).toBe(0);
+        });
+      });
+    });
+
+    describe("length method", () => {
+      it("should return session count", async () => {
+        const sessionAId = generateSessionId();
+
+        await instance.set(sessionAId, getSession(sessionAId));
+
+        const sessionBId = generateSessionId();
+
+        await instance.set(sessionBId, getSession(sessionBId));
+
+        const length = await instance.length();
+
+        expect(length).toBe(2);
+      });
+    });
+
+    describe("touch method", () => {
+      it("should update expiration", async () => {
+        const sessionId = generateSessionId();
+        const session = getSession(sessionId);
+
+        session.cookie.maxAge = 20 * 60 * 1000;
+
+        await instance.set(sessionId, session);
+
+        const sessionDocument = await loadSessionDocument(sessionId);
+
+        await instance.touch(sessionId, session);
+
+        const updatedSessionDocument = await loadSessionDocument(sessionId);
+
+        expect(updatedSessionDocument["@metadata"]["@expires"]).not.toBe(sessionDocument["@metadata"]["@expires"]);
+      });
     });
   });
 
-  describe("get", () => {
-    it("should return stored session", async () => {
-      const instance = new RavenDbStore(documentStore);
+  describe("options", () => {
+    describe("document type option", () => {
+      it("should store document in custom collection", async () => {
+        const instance = new RavenDbStore(documentStore, {
+          documentType: "CustomSession",
+        });
 
-      const sessionId = generateSessionId();
+        const sessionId = generateSessionId();
+        const session = getSession(sessionId);
 
-      const session = getSession(sessionId);
+        await instance.set(sessionId, session);
 
-      await instance.set(sessionId, session);
+        const sessionDocument = await loadSessionDocument(sessionId, "CustomSession");
 
-      const sessionData = await instance.get(sessionId);
-
-      expect(sessionData).toBeDefined();
-    });
-
-    it("should return undefined when session doesn't exist", async () => {
-      const instance = new RavenDbStore(documentStore);
-
-      const sessionId = generateSessionId();
-
-      const sessionData = await instance.get(sessionId);
-
-      expect(sessionData).toBeUndefined();
-    });
-  });
-
-  describe("destroy", () => {
-    it("should delete session", async () => {
-      const instance = new RavenDbStore(documentStore);
-
-      const sessionId = generateSessionId();
-
-      const session = getSession(sessionId);
-
-      await instance.set(sessionId, session);
-
-      await instance.destroy(sessionId);
-
-      const sessionDocument = await loadSessionDocument(sessionId);
-
-      expect(sessionDocument).toBeNull();
-    });
-
-    it("should not fail when session doesn't exist", async () => {
-      const instance = new RavenDbStore(documentStore);
-
-      const sessionId = generateSessionId();
-
-      await instance.destroy(sessionId);
-    });
-  });
-
-  describe("all", () => {
-    it("should return all sessions", async () => {
-      const documentType = `Session_${Uuid()}`;
-
-      const instance = new RavenDbStore(documentStore, {
-        documentType,
+        expect(sessionDocument).toBeDefined();
       });
-
-      const sessionAId = generateSessionId();
-
-      await instance.set(sessionAId, getSession(sessionAId));
-
-      const sessionBId = generateSessionId();
-
-      await instance.set(sessionBId, getSession(sessionBId));
-
-      const sessions = await instance.all();
-
-      expect(Object.keys(sessions).length).toBe(2);
-    });
-  });
-
-  describe("clear", () => {
-    it("should delete all sessions", async () => {
-      const documentType = `Session_${Uuid()}`;
-
-      const instance = new RavenDbStore(documentStore, {
-        documentType,
-      });
-
-      const sessionId = generateSessionId();
-
-      await instance.set(sessionId, getSession(sessionId));
-
-      await instance.clear();
-
-      instance.length((_, length) => {
-        expect(length).toBe(0);
-      });
-    });
-  });
-
-  describe("length", () => {
-    it("should return session count", async () => {
-      const documentType = `Session_${Uuid()}`;
-
-      const instance = new RavenDbStore(documentStore, {
-        documentType,
-      });
-
-      const sessionAId = generateSessionId();
-
-      await instance.set(sessionAId, getSession(sessionAId));
-
-      const sessionBId = generateSessionId();
-
-      await instance.set(sessionBId, getSession(sessionBId));
-
-      const length = await instance.length();
-
-      expect(length).toBe(2);
-    });
-  });
-
-  describe("touch", () => {
-    it("should update expiration", async () => {
-      const documentType = `Session_${Uuid()}`;
-
-      const instance = new RavenDbStore(documentStore, {
-        documentType,
-      });
-
-      const sessionId = generateSessionId();
-      const session = getSession(sessionId);
-
-      session.cookie.maxAge = 20 * 60 * 1000;
-
-      await instance.set(sessionId, session);
-
-      const sessionDocument = await loadSessionDocument(sessionId, documentType);
-
-      await instance.touch(sessionId, session);
-
-      const updatedSessionDocument = await loadSessionDocument(sessionId, documentType);
-
-      expect(updatedSessionDocument["@metadata"]["@expires"]).not.toBe(sessionDocument["@metadata"]["@expires"]);
-    });
-  });
-
-  describe("custom document type", () => {
-    it("should store document in custom collection", async () => {
-      const instance = new RavenDbStore(documentStore, {
-        documentType: "CustomSession",
-      });
-
-      const sessionId = generateSessionId();
-      const session = getSession(sessionId);
-
-      await instance.set(sessionId, session);
-
-      const sessionDocument = await loadSessionDocument(sessionId, "CustomSession");
-
-      expect(sessionDocument).toBeDefined();
     });
   });
 });

@@ -22,19 +22,23 @@ export interface RavenDbStoreOptions {
 }
 
 export class RavenDbStore extends Store {
-  private static defaultOptions: RavenDbStoreOptions = {
+  public static defaultOptions: Readonly<RavenDbStoreOptions> = {
     documentType: "Session",
   };
 
-  private options: RavenDbStoreOptions;
+  private _options: RavenDbStoreOptions;
 
   constructor(private documentStore: DocumentStore, options?: Partial<RavenDbStoreOptions>) {
     super();
 
-    this.options = {
+    this._options = {
       ...RavenDbStore.defaultOptions,
       ...options,
     };
+  }
+
+  public get options(): Readonly<RavenDbStoreOptions> {
+    return this._options;
   }
 
   public set = (sid: string, session: Express.Session, callback?: (err: any) => void) => {
@@ -71,7 +75,7 @@ export class RavenDbStore extends Store {
     const sessionDocument = this.serializeSession(session);
 
     await documentSession.store(sessionDocument, sessionId, {
-      documentType: this.options.documentType,
+      documentType: this._options.documentType,
     });
 
     await documentSession.saveChanges();
@@ -81,7 +85,7 @@ export class RavenDbStore extends Store {
     const documentSession = this.documentStore.openSession();
 
     const sessionDocument = await documentSession.load<SessionDocument>(sessionId, {
-      documentType: this.options.documentType,
+      documentType: this._options.documentType,
     });
 
     return sessionDocument ? this.deserializeSession(sessionDocument) : undefined as any;
@@ -91,7 +95,7 @@ export class RavenDbStore extends Store {
     const documentSession = this.documentStore.openSession();
 
     await documentSession.delete(sessionId, {
-      documentType: this.options.documentType,
+      documentType: this._options.documentType,
     });
 
     await documentSession.saveChanges();
@@ -102,8 +106,8 @@ export class RavenDbStore extends Store {
 
     const sessionDocuments = await documentSession
       .query<SessionDocument>({
-        collection: this.documentStore.conventions.getCollectionName(this.options.documentType),
-        documentType: this.options.documentType,
+        collection: this.documentStore.conventions.getCollectionName(this._options.documentType),
+        documentType: this._options.documentType,
       })
       .waitForNonStaleResults()
       .all();
@@ -124,7 +128,7 @@ export class RavenDbStore extends Store {
 
     const requestExecutor = this.getRequestExecutor(documentSession);
 
-    const collectionName = this.documentStore.conventions.getCollectionName(this.options.documentType);
+    const collectionName = this.documentStore.conventions.getCollectionName(this._options.documentType);
 
     const query = new IndexQuery(`from ${collectionName}`, undefined, undefined, undefined, {
       waitForNonStaleResults: true,
@@ -138,8 +142,8 @@ export class RavenDbStore extends Store {
 
     const count = await documentSession
       .query<SessionDocument>({
-        collection: this.documentStore.conventions.getCollectionName(this.options.documentType),
-        documentType: this.options.documentType,
+        collection: this.documentStore.conventions.getCollectionName(this._options.documentType),
+        documentType: this._options.documentType,
       })
       .waitForNonStaleResults()
       .count();

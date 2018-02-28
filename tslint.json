@@ -8,6 +8,10 @@
       true,
       "never-prefix"
     ],
+    "max-line-length": [
+      true,
+      140
+    ],
     "no-implicit-dependencies": false, // not possible to use peer and dev
     "no-submodule-imports": [
       true,

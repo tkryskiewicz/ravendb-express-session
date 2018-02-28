@@ -1,7 +1,15 @@
 import { Store } from "express-session";
-import { DeleteByQueryCommand, DocumentStore, IndexQuery, RequestExecutor } from "ravendb";
+import {
+  DeleteByQueryCommand,
+  DocumentStore,
+  IDocumentSession,
+  IndexQuery,
+  PatchCommand,
+  PatchRequest,
+  RequestExecutor,
+} from "ravendb";
 
-export interface SessionDocument {
+interface SessionDocument {
   data: string;
 }
 
@@ -51,6 +59,10 @@ export class RavenDbStore extends Store {
 
   public length = (callback?: (err: any, length: number) => void) => {
     return this.handlePromise(this.getCount(), callback);
+  }
+
+  public touch = (sid: string, session: Express.Session, callback?: (err: any) => void) => {
+    return this.handlePromise(this.touchSession(sid, session), callback);
   }
 
   private async setSession(sessionId: string, session: Express.Session) {
@@ -110,7 +122,7 @@ export class RavenDbStore extends Store {
   private async clearSessions() {
     const documentSession = this.documentStore.openSession();
 
-    const requestExecutor: RequestExecutor = (documentSession.advanced as any).requestExecutor; // FIXME: hacky!
+    const requestExecutor = this.getRequestExecutor(documentSession);
 
     const collectionName = this.documentStore.conventions.getCollectionName(this.options.documentType);
 
@@ -135,10 +147,45 @@ export class RavenDbStore extends Store {
     return count;
   }
 
+  private async touchSession(sessionId: string, session: Express.Session) {
+    if (!session.cookie.maxAge) {
+      return;
+    }
+
+    const documentSession = this.documentStore.openSession();
+
+    const requestExecutor = this.getRequestExecutor(documentSession);
+
+    const expirationDate = this.getExpirationDate(session.cookie.maxAge);
+
+    // FIXME: without updating non-metadata props it doesn't seem to update document
+    const request = new PatchRequest(`this.Test = "TEST"; this["@metadata"]["@expires"] = "${expirationDate.toISOString()}"`);
+
+    await requestExecutor.execute(new PatchCommand(sessionId, request));
+  }
+
+  private getRequestExecutor(documentSession: IDocumentSession) {
+    return (documentSession.advanced as any).requestExecutor as RequestExecutor; // FIXME: hacky!
+  }
+
+  private getExpirationDate(maxAge: number) {
+    return new Date(new Date().valueOf() + maxAge);
+  }
+
   private serializeSession(session: Express.SessionData): SessionDocument {
-    return {
+    const document: any = {
       data: JSON.stringify(session),
     };
+
+    if (session.cookie.maxAge !== null) {
+      const expirationDate = this.getExpirationDate(session.cookie.maxAge);
+
+      document["@metadata"] = {
+        "@expires": expirationDate.toISOString(),
+      };
+    }
+
+    return document;
   }
 
   private deserializeSession(document: SessionDocument): Express.SessionData {

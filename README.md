@@ -49,7 +49,8 @@ Changes the collection in which sessions are stored.
 Besides the required `set`, `get` and `destroy` methods, the following are also available:
 - `all`, returns all sessions as a sessionId -> session key-value object
 - `clear`, deletes all sessions
-- `length`, returns the count of all sessions. 
+- `length`, returns the count of all sessions
+- `touch`, resets the session expiration date.
 
 ## Using with promises
 

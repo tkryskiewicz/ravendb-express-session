@@ -1,4 +1,13 @@
-import { DeleteByQueryCommand, DocumentStore, IDocumentStore, QueryOperationOptions, RequestExecutor } from "ravendb";
+import {
+  CreateDatabaseOperation,
+  DatabaseDocument,
+  DeleteByQueryCommand,
+  DeleteDatabaseOperation,
+  DocumentStore,
+  IDocumentStore,
+  QueryOperationOptions,
+  RequestExecutor,
+} from "ravendb";
 import * as Uuid from "uuid/v1";
 
 import { testConfig } from "../test.config";
@@ -7,17 +16,24 @@ import { deleteAllSessionDocuments, generateSessionId, getSession, getSessionCoo
 import { RavenDbStore } from "./RavenDbStore";
 
 describe("RavenDbStore", () => {
+  const database = `ExpressSessionTests_${Uuid()}`;
   let documentStore: IDocumentStore;
 
-  beforeAll(() => {
+  beforeAll(async () => {
     const { ravenDbHost, ravenDbPort } = testConfig;
 
-    documentStore = DocumentStore.create(`http://${ravenDbHost}:${ravenDbPort}`, "Test");
+    documentStore = DocumentStore.create(`http://${ravenDbHost}:${ravenDbPort}`, database);
 
     documentStore.initialize();
+
+    const databaseDocument = new DatabaseDocument(database, { "Raven/DataDir": "expressSessionTests" });
+
+    await documentStore.maintenance.server.send(new CreateDatabaseOperation(databaseDocument));
   });
 
   afterAll(async () => {
+    await documentStore.maintenance.server.send(new DeleteDatabaseOperation(database));
+
     await documentStore.dispose();
   });
 

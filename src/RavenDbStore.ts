@@ -126,9 +126,10 @@ export class RavenDbStore extends Store {
 
     const requestExecutor = this.getRequestExecutor(documentSession);
 
-    const query = documentSession.query({
-      collection: this.documentStore.conventions.getCollectionName(this._options.documentType),
-    })
+    const query = documentSession
+      .query({
+        collection: this.documentStore.conventions.getCollectionName(this._options.documentType),
+      })
       .waitForNonStaleResults()
       .getIndexQuery();
 

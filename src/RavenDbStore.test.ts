@@ -203,9 +203,15 @@ describe("RavenDbStore", () => {
   });
 
   describe("options", () => {
+    let instance: RavenDbStore;
+
+    afterAll(async () => {
+      await deleteAllSessionDocuments(instance);
+    });
+
     describe("document type option", () => {
       it("should store document in custom collection", async () => {
-        const instance = new RavenDbStore(documentStore, {
+        instance = new RavenDbStore(documentStore, {
           documentType: "CustomSession",
         });
 

@@ -80,6 +80,16 @@ try {
 }
 ```
 
+# Running tests
+
+This project comes with a suite of tests. To run them, ensure that you have a running instance of RavenDB. Verify that settings in `test.config.ts` contain it's url and port. Then run the tests with the following command:
+
+```sh
+$ npm test
+```
+
+The suite creates a temporary database, runs all tests and then tears it down (hard delete).
+
 ## License
 
 [MIT](https://opensource.org/licenses/MIT)

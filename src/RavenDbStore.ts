@@ -1,11 +1,9 @@
 import { Store } from "express-session";
 import {
   DeleteByQueryCommand,
-  DocumentStore,
-  IDocumentSession,
+  IDocumentStore,
   PatchCommand,
   PatchRequest,
-  RequestExecutor,
 } from "ravendb";
 
 interface SessionDocument {
@@ -27,7 +25,7 @@ export class RavenDbStore extends Store {
 
   private _options: RavenDbStoreOptions;
 
-  constructor(public readonly documentStore: DocumentStore, options?: Partial<RavenDbStoreOptions>) {
+  constructor(public readonly documentStore: IDocumentStore, options?: Partial<RavenDbStoreOptions>) {
     super();
 
     this._options = {
@@ -124,7 +122,7 @@ export class RavenDbStore extends Store {
   private async clearSessions() {
     const documentSession = this.documentStore.openSession();
 
-    const requestExecutor = this.getRequestExecutor(documentSession);
+    const requestExecutor = this.documentStore.getRequestExecutor();
 
     const query = documentSession
       .query({
@@ -154,9 +152,7 @@ export class RavenDbStore extends Store {
       return;
     }
 
-    const documentSession = this.documentStore.openSession();
-
-    const requestExecutor = this.getRequestExecutor(documentSession);
+    const requestExecutor = this.documentStore.getRequestExecutor();
 
     const expirationDate = this.getExpirationDate(session.cookie.maxAge);
 
@@ -164,10 +160,6 @@ export class RavenDbStore extends Store {
     const request = new PatchRequest(`this.Test = "TEST"; this["@metadata"]["@expires"] = "${expirationDate.toISOString()}"`);
 
     await requestExecutor.execute(new PatchCommand(sessionId, request));
-  }
-
-  private getRequestExecutor(documentSession: IDocumentSession) {
-    return (documentSession.advanced as any).requestExecutor as RequestExecutor; // FIXME: hacky!
   }
 
   private getExpirationDate(maxAge: number) {

@@ -1,4 +1,4 @@
-import { DeleteByQueryCommand, DocumentStore, QueryOperationOptions, RequestExecutor } from "ravendb";
+import { DeleteByQueryCommand, DocumentStore, IDocumentStore, QueryOperationOptions, RequestExecutor } from "ravendb";
 import * as Uuid from "uuid/v1";
 
 import { testConfig } from "../test.config";
@@ -7,14 +7,18 @@ import { deleteAllSessionDocuments, generateSessionId, getSession, getSessionCoo
 import { RavenDbStore } from "./RavenDbStore";
 
 describe("RavenDbStore", () => {
-  let documentStore: DocumentStore;
+  let documentStore: IDocumentStore;
 
   beforeAll(() => {
     const { ravenDbHost, ravenDbPort } = testConfig;
 
-    documentStore = new DocumentStore(`http://${ravenDbHost}:${ravenDbPort}`, "Test");
+    documentStore = DocumentStore.create(`http://${ravenDbHost}:${ravenDbPort}`, "Test");
 
     documentStore.initialize();
+  });
+
+  afterAll(async () => {
+    await documentStore.dispose();
   });
 
   it("should be constructable", () => {

@@ -1,5 +1,5 @@
-unreleased
-==========
+v0.4 / 2018-03-01
+=================
 
 * implemented `touch` method
 

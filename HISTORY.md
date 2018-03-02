@@ -1,3 +1,8 @@
+unreleased
+==========
+
+* session document id now contains document type/collection name
+
 v0.4 / 2018-03-01
 =================
 

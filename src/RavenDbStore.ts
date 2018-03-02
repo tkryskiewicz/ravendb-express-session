@@ -38,6 +38,12 @@ export class RavenDbStore extends Store {
     return this._options;
   }
 
+  public getDocumentId(sessionId: string) {
+    const collectionName = this.documentStore.conventions.getCollectionName(this._options.documentType);
+
+    return `${collectionName}/${sessionId}`;
+  }
+
   public set = (sid: string, session: Express.Session, callback?: (err: any) => void) => {
     return this.handlePromise(this.setSession(sid, session), callback);
   }
@@ -71,7 +77,7 @@ export class RavenDbStore extends Store {
 
     const sessionDocument = this.serializeSession(session);
 
-    await documentSession.store(sessionDocument, sessionId, {
+    await documentSession.store(sessionDocument, this.getDocumentId(sessionId), {
       documentType: this._options.documentType,
     });
 
@@ -81,7 +87,7 @@ export class RavenDbStore extends Store {
   private async getSessionData(sessionId: string): Promise<Express.SessionData> {
     const documentSession = this.documentStore.openSession();
 
-    const sessionDocument = await documentSession.load<SessionDocument>(sessionId, {
+    const sessionDocument = await documentSession.load<SessionDocument>(this.getDocumentId(sessionId), {
       documentType: this._options.documentType,
     });
 
@@ -91,7 +97,7 @@ export class RavenDbStore extends Store {
   private async destroySession(sessionId: string) {
     const documentSession = this.documentStore.openSession();
 
-    await documentSession.delete(sessionId, {
+    await documentSession.delete(this.getDocumentId(sessionId), {
       documentType: this._options.documentType,
     });
 
@@ -159,7 +165,7 @@ export class RavenDbStore extends Store {
     // FIXME: without updating non-metadata props it doesn't seem to update document
     const request = new PatchRequest(`this.Test = "TEST"; this["@metadata"]["@expires"] = "${expirationDate.toISOString()}"`);
 
-    await requestExecutor.execute(new PatchCommand(sessionId, request));
+    await requestExecutor.execute(new PatchCommand(this.getDocumentId(sessionId), request));
   }
 
   private getExpirationDate(maxAge: number) {

@@ -25,12 +25,10 @@ export const getSession = (sessionId: string, data: object = {}): Express.Sessio
   ...data,
 });
 
-export const loadSessionDocument = async (store: RavenDbStore, id: string, documentType?: string) => {
+export const loadSessionDocument = async (store: RavenDbStore, id: string) => {
   const documentSession = store.documentStore.openSession();
 
-  const sessionDocument = await documentSession.load(id, {
-    documentType: documentType || RavenDbStore.defaultOptions.documentType,
-  });
+  const sessionDocument = await documentSession.load(store.getDocumentId(id));
 
   return sessionDocument;
 };

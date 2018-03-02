@@ -42,7 +42,8 @@ const sessionStore = new RavenDbStore(store, {
 
 Default: `"Session"`
 
-Changes the collection in which sessions are stored.
+Changes the document id and collection in which sessions are stored. 
+For default value this results in `Sessions/__sessionId__` and `Sessions` respectively.
 
 ## Available methods
 

@@ -43,6 +43,16 @@ describe("RavenDbStore", () => {
     expect(instance).toBeDefined();
   });
 
+  describe("getDocumentId", () => {
+    it("should return default document id for session", () => {
+      const instance = new RavenDbStore(documentStore);
+
+      const result = instance.getDocumentId("sessionId");
+
+      expect(result).toBe("Sessions/sessionId");
+    });
+  });
+
   describe("methods", () => {
     let instance: RavenDbStore;
 
@@ -65,7 +75,7 @@ describe("RavenDbStore", () => {
         const sessionDocument = await loadSessionDocument(instance, sessionId);
 
         expect(sessionDocument).toBeDefined();
-        expect(sessionDocument.id).toBe(sessionId);
+        expect(sessionDocument.id).toBe(instance.getDocumentId(sessionId));
       });
 
       it("should store session document with sid parameter", async () => {
@@ -80,7 +90,7 @@ describe("RavenDbStore", () => {
         const otherSessionDocument = await loadSessionDocument(instance, otherSessionId);
 
         expect(sessionDocument).not.toBeNull();
-        expect(sessionDocument.id).toBe(sessionId);
+        expect(sessionDocument.id).toBe(instance.getDocumentId(sessionId));
         expect(otherSessionDocument).toBeNull();
       });
 
@@ -230,19 +240,28 @@ describe("RavenDbStore", () => {
     });
 
     describe("document type option", () => {
-      it("should store document in custom collection", async () => {
+      beforeAll(() => {
         instance = new RavenDbStore(documentStore, {
           documentType: "CustomSession",
         });
+      });
 
+      it("should affect document id", () => {
+        const result = instance.getDocumentId("sessionId");
+
+        expect(result).toBe("CustomSessions/sessionId");
+      });
+
+      it("should store document in custom collection", async () => {
         const sessionId = generateSessionId();
         const session = getSession(sessionId);
 
         await instance.set(sessionId, session);
 
-        const sessionDocument = await loadSessionDocument(instance, sessionId, "CustomSession");
+        const sessionDocument = await loadSessionDocument(instance, sessionId);
 
         expect(sessionDocument).toBeDefined();
+        expect(sessionDocument["@metadata"]["@collection"]).toBe("CustomSessions");
       });
     });
   });

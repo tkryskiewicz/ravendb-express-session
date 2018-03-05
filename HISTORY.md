@@ -1,5 +1,5 @@
-unreleased
-==========
+v0.5 / 2018-03-05
+=================
 
 * session document id now contains document type/collection name
 
